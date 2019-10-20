@@ -10,8 +10,7 @@ enum TokenType {
     MINUS,
     MUL,
     DIV,
-    INT,
-    NEVER
+    INT
 };
 
 class Lexer {

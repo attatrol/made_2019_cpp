@@ -8,21 +8,27 @@ Lexer::Lexer(const std::string& input): m_input(input), m_charIdx(0) {}
 TokenType Lexer::getNext() { 
     if (m_input.size() >= m_charIdx)
         return TokenType::EOL;
-    const char& letter = m_input[m_charIdx++];
-    if (std::isspace(letter))
-        return TokenType::SPACE;
+    char letter = m_input[m_charIdx++];
 
+    // TokenType::SPACE
+    if (std::isspace(letter)) {
+        while (m_input.size() >= m_charIdx && std::isspace(letter = m_input[m_charIdx])) {
+            m_charIdx++;
+        }
+        return TokenType::SPACE;
+    }
+
+    // TokenType::INT
     if (std::isdigit(letter)) {
         m_lastValue = letter - '0';
-        char letter2;
-        while (m_input.size() >= m_charIdx && std::isdigit(letter2 = m_input[m_charIdx])) {
+        while (m_input.size() >= m_charIdx && std::isdigit(letter = m_input[m_charIdx])) {
             if (m_lastValue < (std::numeric_limits<unsigned long>::max() - 9) / 10) {
-                m_lastValue = 10 * m_lastValue + (letter2 - '0');
+                m_lastValue = 10 * m_lastValue + (letter - '0');
             } else {
                 if (m_lastValue <= std::numeric_limits<unsigned long>::max() / 10) {
                         m_lastValue *= 10;
-                    if (m_lastValue <= std::numeric_limits<unsigned long>::max() - (letter2 - '0')) {
-                        m_lastValue += letter2 - '0';
+                    if (m_lastValue <= std::numeric_limits<unsigned long>::max() - (letter - '0')) {
+                        m_lastValue += letter - '0';
                     } else {
                         throw ErrorCode::INPUT_OVERFLOW;
                     }

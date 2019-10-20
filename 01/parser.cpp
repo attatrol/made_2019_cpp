@@ -7,6 +7,9 @@ Parser::Parser(const std::string& input) : m_lexer(input), m_stored(false), m_st
 
 long Parser::readValue() {
     TokenType token = m_lexer.getNext();
+    if (token == TokenType::SPACE) {
+        token = m_lexer.getNext();
+    }
     bool negative;
     unsigned long value;
     if (token == TokenType::MINUS) {
@@ -30,6 +33,8 @@ long Parser::readValue() {
 TokenType Parser::readOperation() {
     TokenType result = m_lexer.getNext();
     switch (result) {
+        case TokenType::SPACE:
+            return readOperation(); // recursion depth is limited to 1
         case TokenType::PLUS:
         case TokenType::MINUS:
         case TokenType::MUL:
