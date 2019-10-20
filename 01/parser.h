@@ -1,6 +1,9 @@
-//#include <limits>
+#ifndef PARSER_H
+#define PARSER_H
+
 #include <stack>
 
+#include "error_codes.h"
 #include "lexer.h"
 
 enum ParserState {
@@ -65,3 +68,5 @@ void calcDiv(long& lhs, long rhs) {
     }
     lhs /= rhs;
 }
+
+#endif /* PARSER_H */
