@@ -20,23 +20,21 @@ long Parser::readValue() {
     if (negative) {
         token = m_lexer.getNext();
     }
-    unsigned long value;
-    if (token == TokenType::INT) {
-        value = m_lexer.getLastIntValue();
-        if (negative) {
-            if (value <= std::numeric_limits<long>::max()) {
-                return -static_cast<long>(value);
-            } else if (value == static_cast<unsigned long>(std::numeric_limits<long>::max()) + 1) {
-                return std::numeric_limits<long>::min();
-            }
-
-        } else if (value <= std::numeric_limits<long>::max()) {
-            return static_cast<long>(value);
-        }
-    } else {
-        throw ParserException(ErrorCode::INPUT_OVERFLOW);
+    if (token != TokenType::INT) {
+        throw ParserException(ErrorCode::SYNTAX_ERROR);
     }
-    throw ParserException(ErrorCode::SYNTAX_ERROR);
+    unsigned long value = m_lexer.getLastIntValue();
+    if (negative) {
+        if (value <= std::numeric_limits<long>::max()) {
+            return -static_cast<long>(value);
+        } else if (value == static_cast<unsigned long>(std::numeric_limits<long>::max()) + 1) {
+            return std::numeric_limits<long>::min();
+        }
+
+    } else if (value <= std::numeric_limits<long>::max()) {
+        return static_cast<long>(value);
+    }
+    throw ParserException(ErrorCode::INPUT_OVERFLOW);
 }
 
 TokenType Parser::readOperation() {
@@ -57,14 +55,14 @@ TokenType Parser::readOperation() {
 
 void calcAdd(long& lhs, long rhs) {
     if (lhs > 0 ? std::numeric_limits<long>::min() + lhs > rhs : std::numeric_limits<long>::max() + lhs < rhs) {
-        throw ParserException(ErrorCode::INPUT_OVERFLOW);
+        throw ParserException(ErrorCode::OP_OVERFLOW);
     }
     lhs += rhs;
 }
 
 void calcSub(long& lhs, long rhs) {
     if (lhs > 0 ? std::numeric_limits<long>::max() - lhs < rhs : std::numeric_limits<long>::min() - lhs > rhs) {
-        throw ParserException(ErrorCode::INPUT_OVERFLOW);
+        throw ParserException(ErrorCode::OP_OVERFLOW);
     }
     lhs -= rhs;
 }
@@ -73,7 +71,7 @@ void calcMul(long& lhs, long rhs) {
     if (lhs > 0 && rhs > 0 && lhs > std::numeric_limits<long>::max() / rhs ||
         lhs < 0 && rhs > 0 && lhs < std::numeric_limits<long>::min() / rhs ||
         lhs > 0 && rhs < 0 && rhs < std::numeric_limits<long>::min() / lhs ||
-        lhs < 0 && rhs < 0 && (lhs <= std::numeric_limits<long>::min() || rhs <= std::numeric_limits<long>::min() || -lhs > std::numeric_limits<long>::max() / -rhs)) {
+        lhs < 0 && rhs < 0 && (lhs < std::numeric_limits<long>::min() || rhs < std::numeric_limits<long>::min() || -lhs > std::numeric_limits<long>::max() / -rhs)) {
         throw ParserException(ErrorCode::OP_OVERFLOW);
     }
     lhs *= rhs;
@@ -81,6 +79,9 @@ void calcMul(long& lhs, long rhs) {
 
 void calcDiv(long& lhs, long rhs) {
     if (rhs == 0) {
+        throw ParserException(ErrorCode::DIV_BY_ZERO);
+    }
+    if (lhs == std::numeric_limits<long>::min() && rhs == -1L) {
         throw ParserException(ErrorCode::OP_OVERFLOW);
     }
     lhs /= rhs;
@@ -105,14 +106,22 @@ void Parser::reduceToLhs() {
 }
 
 bool isHighProprityOp(TokenType op) {
-    return op == TokenType::PLUS || op == TokenType::MINUS;
+    return op == TokenType::MUL || op == TokenType::DIV;
 }
 
 bool Parser::next() {
     switch (m_state) {
         case ParserState::READ_LHS:
             m_lhs = readValue();
-            m_state = ParserState::READ_OP_AND_PROCESS_STORED;
+            m_state = ParserState::READ_OP;
+            break;
+        case ParserState::READ_OP:
+            m_op = readOperation();
+            if (m_op == TokenType::EOL) {
+                m_state = ParserState::FINISHED;
+                return false;
+            }
+            m_state = ParserState::READ_RHS;
             break;
         case ParserState::READ_RHS:
             m_rhs = readValue();
@@ -131,7 +140,7 @@ bool Parser::next() {
                     reduceToLhs();
                 }
             } else {
-                if (m_stored) {
+                if (m_stored && !isHighProprityOp(op)) {
                     reduceToLhs();
                     // pop
                     m_rhs = m_lhs;

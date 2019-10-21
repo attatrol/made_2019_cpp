@@ -8,10 +8,16 @@
 
 enum ParserState {
     READ_LHS,
-    READ_OP_AND_PROCESS_STORED,
+    READ_OP,
     READ_RHS,
+    READ_OP_AND_PROCESS_STORED,
     FINISHED
 };
+
+void calcAdd(long& lhs, long rhs);
+void calcSub(long& lhs, long rhs);
+void calcMul(long& lhs, long rhs);
+void calcDiv(long& lhs, long rhs);
 
 class Parser {
     private:
