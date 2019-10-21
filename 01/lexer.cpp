@@ -3,17 +3,23 @@
 #include "error_codes.h"
 #include "lexer.h"
 
-Lexer::Lexer(const std::string& input): m_input(input), m_charIdx(0) {}
+Lexer::Lexer(): m_input(nullptr), m_idx(0) {
+}
+
+void Lexer::setInput(const char* input) {
+    m_input = input;
+    m_idx = 0;
+}
 
 TokenType Lexer::getNext() { 
-    if (m_input.size() >= m_charIdx)
+    char letter = m_input[m_idx++];
+    if (letter == '\0')
         return TokenType::EOL;
-    char letter = m_input[m_charIdx++];
 
     // TokenType::SPACE
     if (std::isspace(letter)) {
-        while (m_input.size() >= m_charIdx && std::isspace(letter = m_input[m_charIdx])) {
-            m_charIdx++;
+        while (std::isspace(letter = m_input[m_idx])) {
+            m_idx++;
         }
         return TokenType::SPACE;
     }
@@ -21,7 +27,7 @@ TokenType Lexer::getNext() {
     // TokenType::INT
     if (std::isdigit(letter)) {
         m_lastValue = letter - '0';
-        while (m_input.size() >= m_charIdx && std::isdigit(letter = m_input[m_charIdx])) {
+        while (std::isdigit(letter = m_input[m_idx])) {
             if (m_lastValue < (std::numeric_limits<unsigned long>::max() - 9) / 10) {
                 m_lastValue = 10 * m_lastValue + (letter - '0');
             } else {
@@ -30,22 +36,22 @@ TokenType Lexer::getNext() {
                     if (m_lastValue <= std::numeric_limits<unsigned long>::max() - (letter - '0')) {
                         m_lastValue += letter - '0';
                     } else {
-                        throw ErrorCode::INPUT_OVERFLOW;
+                        throw ParserException(ErrorCode::INPUT_OVERFLOW);
                     }
                 } else {
-                    throw ErrorCode::INPUT_OVERFLOW;
+                    throw ParserException(ErrorCode::INPUT_OVERFLOW);
                 }
             }
-            m_charIdx++;
+            m_idx++;
         }
         return TokenType::INT;
     }
 
-    switch(m_input[m_charIdx]) {
+    switch(letter) {
         case '+': return TokenType::PLUS;
         case '-': return TokenType::MINUS;
         case '*': return TokenType::MUL;
         case '/': return TokenType::DIV;
-        default: throw ErrorCode::UNKNOWN_TOKEN;
+        default: throw ParserException(ErrorCode::UNKNOWN_TOKEN);
     }
 }

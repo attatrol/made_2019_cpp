@@ -15,11 +15,13 @@ enum TokenType {
 
 class Lexer {
     private:
-        const std::string& m_input;
-        std::string::size_type m_charIdx;
+        const char* m_input; // no poiter ownship hence no need for destructor
+        std::string::size_type m_idx;
         unsigned long m_lastValue;
     public:
-        Lexer(const std::string& input);
+        Lexer();
+//        Lexer(const Lexer& other);
+        void setInput(const char* input);
         TokenType getNext();
         unsigned long getLastIntValue() { return m_lastValue; };
 };

@@ -1,7 +1,7 @@
 #ifndef PARSER_H
 #define PARSER_H
 
-#include <stack>
+#include <limits>
 
 #include "error_codes.h"
 #include "lexer.h"
@@ -12,10 +12,6 @@ enum ParserState {
     READ_RHS,
     FINISHED
 };
-
-bool isHighProprityOp(TokenType op) {
-    return op == TokenType::PLUS || op == TokenType::MINUS;
-}
 
 class Parser {
     private:
@@ -32,41 +28,11 @@ class Parser {
         void reduceToLhs();
         bool next();
     public:
-        Parser(const std::string& input);
+        Parser();
+        void setInput(const char* input);
         void parse();
         bool getFinished() { return m_state == ParserState::FINISHED; }
         long getResult() { return m_lhs; }
 };
-
-void calcAdd(long& lhs, long rhs) {
-    if (lhs > 0 ? std::numeric_limits<long>::min() + lhs > rhs : std::numeric_limits<long>::max() + lhs < rhs) {
-        throw ErrorCode::OP_OVERFLOW;
-    }
-    lhs += rhs;
-}
-
-void calcSub(long& lhs, long rhs) {
-    if (lhs > 0 ? std::numeric_limits<long>::max() - lhs < rhs : std::numeric_limits<long>::min() - lhs > rhs) {
-        throw ErrorCode::OP_OVERFLOW;
-    }
-    lhs -= rhs;
-}
-
-void calcMul(long& lhs, long rhs) {
-    if (lhs > 0 && rhs > 0 && lhs > INT64_MAX / rhs ||
-        lhs < 0 && rhs > 0 && lhs < INT64_MIN / rhs ||
-        lhs > 0 && rhs < 0 && rhs < INT64_MIN / lhs ||
-        lhs < 0 && rhs < 0 && (lhs <= INT64_MIN || rhs <= INT64_MIN || -lhs > INT64_MAX / -rhs)) {
-        throw ErrorCode::OP_OVERFLOW;    
-    }
-    lhs *= rhs;
-}
-
-void calcDiv(long& lhs, long rhs) {
-    if (rhs == 0) {
-        throw ErrorCode::DIV_BY_ZERO;
-    }
-    lhs /= rhs;
-}
 
 #endif /* PARSER_H */
