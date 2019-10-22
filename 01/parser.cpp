@@ -53,21 +53,21 @@ TokenType Parser::readOperation() {
     }
 }
 
-void calcAdd(long& lhs, long rhs) {
+inline void calcAdd(long& lhs, long rhs) {
     if (lhs > 0 ? std::numeric_limits<long>::min() + lhs > rhs : std::numeric_limits<long>::max() + lhs < rhs) {
         throw ParserException(ErrorCode::OP_OVERFLOW);
     }
     lhs += rhs;
 }
 
-void calcSub(long& lhs, long rhs) {
+inline void calcSub(long& lhs, long rhs) {
     if (lhs > 0 ? std::numeric_limits<long>::max() - lhs < rhs : std::numeric_limits<long>::min() - lhs > rhs) {
         throw ParserException(ErrorCode::OP_OVERFLOW);
     }
     lhs -= rhs;
 }
 
-void calcMul(long& lhs, long rhs) {
+inline void calcMul(long& lhs, long rhs) {
     if (lhs > 0 && rhs > 0 && lhs > std::numeric_limits<long>::max() / rhs ||
         lhs < 0 && rhs > 0 && lhs < std::numeric_limits<long>::min() / rhs ||
         lhs > 0 && rhs < 0 && rhs < std::numeric_limits<long>::min() / lhs ||
@@ -77,7 +77,7 @@ void calcMul(long& lhs, long rhs) {
     lhs *= rhs;
 }
 
-void calcDiv(long& lhs, long rhs) {
+inline void calcDiv(long& lhs, long rhs) {
     if (rhs == 0) {
         throw ParserException(ErrorCode::DIV_BY_ZERO);
     }
@@ -105,67 +105,53 @@ void Parser::reduceToLhs() {
     // assert(false);
 }
 
-bool isHighProprityOp(TokenType op) {
+inline bool isHighProprityOp(TokenType op) {
     return op == TokenType::MUL || op == TokenType::DIV;
 }
 
-bool Parser::next() {
-    switch (m_state) {
-        case ParserState::EMPTY:
-            throw ParserException(ErrorCode::NO_INPUT);    
-        case ParserState::FINISHED:
-            return true; // just in case someone calls parse method again.
-        case ParserState::READ_LHS:
-            m_lhs = readValue();
-            m_state = ParserState::READ_OP;
-            break;
-        case ParserState::READ_OP:
-            m_op = readOperation();
-            if (m_op == TokenType::EOL) {
-                m_state = ParserState::FINISHED;
-                return false;
-            }
-            m_state = ParserState::READ_RHS;
-            break;
-        case ParserState::READ_RHS:
-            m_rhs = readValue();
-            m_state = ParserState::READ_OP_AND_PROCESS_STORED;
-            break;
-        case ParserState::READ_OP_AND_PROCESS_STORED:
-            TokenType op = readOperation();
-            if (!isHighProprityOp(m_op)) {
-                if (isHighProprityOp(op)) {
-                    // push
-                    m_stored = true;
-                    m_stored_lhs = m_lhs;
-                    m_stored_op = m_op;
-                    m_lhs = m_rhs;
-                } else {
-                    reduceToLhs();
-                }
-            } else {
-                if (m_stored && !isHighProprityOp(op)) {
-                    reduceToLhs();
-                    // pop
-                    m_rhs = m_lhs;
-                    m_lhs = m_stored_lhs;
-                    m_op = m_stored_op;
-                    m_stored = false;
-                }
-                reduceToLhs();
-            }
-            if (op == TokenType::EOL) {
-                // assert(!m_stored);
-                m_state = ParserState::FINISHED;
-                return false;
-            }
-            m_op = op;
-            m_state = ParserState::READ_RHS;
-            break;
-    }
-    return true;
-}
-
 void Parser::parse() {
-    while (next());
+    while (m_state != ParserState::FINISHED) {
+        switch (m_state) {
+            case ParserState::EMPTY:
+                throw ParserException(ErrorCode::NO_INPUT);    
+            case ParserState::READ_LHS:
+                m_lhs = readValue();
+                m_state = ParserState::READ_OP;
+                break;
+            case ParserState::READ_OP:
+                m_op = readOperation();
+                m_state = m_op == TokenType::EOL ? ParserState::FINISHED : ParserState::READ_RHS;
+                break;
+            case ParserState::READ_RHS:
+                m_rhs = readValue();
+                m_state = ParserState::READ_OP_AND_PROCESS_STORED;
+                break;
+            case ParserState::READ_OP_AND_PROCESS_STORED:
+                TokenType op = readOperation();
+                if (!isHighProprityOp(m_op)) {
+                    if (isHighProprityOp(op)) {
+                        // push
+                        m_stored = true;
+                        m_stored_lhs = m_lhs;
+                        m_stored_op = m_op;
+                        m_lhs = m_rhs;
+                    } else {
+                        reduceToLhs();
+                    }
+                } else {
+                    if (m_stored && !isHighProprityOp(op)) {
+                        reduceToLhs();
+                        // pop
+                        m_rhs = m_lhs;
+                        m_lhs = m_stored_lhs;
+                        m_op = m_stored_op;
+                        m_stored = false;
+                    }
+                    reduceToLhs();
+                }
+                m_state = op == TokenType::EOL ? ParserState::FINISHED : ParserState::READ_RHS;
+                m_op = op;
+                break;
+        }
+    }
 }

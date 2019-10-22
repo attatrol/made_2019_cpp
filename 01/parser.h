@@ -53,14 +53,15 @@ class Parser {
         TokenType readOperation();
         /** Perform the current operation over lhs & rhs and store the result into lhs */
         void reduceToLhs();
-        /** Pull the next token as an operation from the parser */
-        bool next();
     public:
         /** Default ctor */
         Parser();
         /** Set input string */
         void setInput(const char* input);
-        /** Parse input string */
+        /** 
+         * Parse input string.
+         * Finite automata that pulls tokens one by one from the lexer until EOL.
+         */
         void parse();
         /** Flag that indicates that the result is ready */
         bool getFinished() { return m_state == ParserState::FINISHED; }
