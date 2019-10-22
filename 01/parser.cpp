@@ -2,13 +2,13 @@
 #include "error_codes.h"
 #include "parser.h"
 
-Parser::Parser(): m_lexer(Lexer()), m_state(ParserState::READ_LHS), m_stored(false) {
+Parser::Parser(): m_lexer(Lexer()), m_state(ParserState::EMPTY), m_stored(false) {
 }
 
 void Parser::setInput(const char* input) {
     m_lexer.setInput(input);
     m_stored = false;
-    m_state = ParserState::READ_LHS;
+    m_state = input == nullptr ? ParserState::EMPTY : ParserState::READ_LHS;
 }
 
 long Parser::readValue() {
@@ -41,7 +41,7 @@ TokenType Parser::readOperation() {
     TokenType result = m_lexer.getNext();
     switch (result) {
         case TokenType::SPACE:
-            return readOperation(); // recursion depth is limited to 1
+            return readOperation(); // recursion depth is limited to 1: spaces are squashed by the lexer
         case TokenType::PLUS:
         case TokenType::MINUS:
         case TokenType::MUL:
@@ -111,6 +111,10 @@ bool isHighProprityOp(TokenType op) {
 
 bool Parser::next() {
     switch (m_state) {
+        case ParserState::EMPTY:
+            throw ParserException(ErrorCode::NO_INPUT);    
+        case ParserState::FINISHED:
+            return true; // just in case someone calls parse method again.
         case ParserState::READ_LHS:
             m_lhs = readValue();
             m_state = ParserState::READ_OP;
