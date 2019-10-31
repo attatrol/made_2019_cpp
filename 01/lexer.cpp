@@ -3,10 +3,10 @@
 #include "error_codes.h"
 #include "lexer.h"
 
-Lexer::Lexer(): m_input(nullptr), m_idx(0) {
+Lexer::Lexer(): m_input(), m_idx(0) {
 }
 
-void Lexer::setInput(const char* input) {
+void Lexer::setInput(const std::string& input) {
     m_input = input;
     m_idx = 0;
 }

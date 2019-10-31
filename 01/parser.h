@@ -57,7 +57,7 @@ class Parser {
         /** Default ctor */
         Parser();
         /** Set input string */
-        void setInput(const char* input);
+        void setInput(const std::string& input);
         /** 
          * Parse input string.
          * Finite automata that pulls tokens one by one from the lexer until EOL.

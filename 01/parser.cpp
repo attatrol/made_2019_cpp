@@ -2,13 +2,13 @@
 #include "error_codes.h"
 #include "parser.h"
 
-Parser::Parser(): m_lexer(Lexer()), m_state(ParserState::EMPTY), m_stored(false) {
+Parser::Parser(): m_lexer(), m_state(ParserState::EMPTY), m_stored(false) {
 }
 
-void Parser::setInput(const char* input) {
+void Parser::setInput(const std::string& input) {
     m_lexer.setInput(input);
     m_stored = false;
-    m_state = input == nullptr ? ParserState::EMPTY : ParserState::READ_LHS;
+    m_state = input.empty() ? ParserState::EMPTY : ParserState::READ_LHS;
 }
 
 long Parser::readValue() {

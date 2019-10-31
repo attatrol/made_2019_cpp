@@ -30,7 +30,7 @@ struct ParserException : public std::exception {
     ParserException(ErrorCode errorCode): errorCode(errorCode) { }
 
 	const char* what() noexcept {
-    	return "Parser exception";
+        return "Parser exception";
     }
 };
 

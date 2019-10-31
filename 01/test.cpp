@@ -12,7 +12,7 @@ bool testNullInput(Parser& parser) {
         return false;
     } catch (const ParserException& e) {
         return e.errorCode == ErrorCode::NO_INPUT;
-    } 
+    }
 }
 
 /* Test arithmetic operation expecting positive outcome */
@@ -115,13 +115,13 @@ bool testIntDomain(Parser& parser) {
     try {
         for (long i = 0; i <= 11; i++) {
             const std::string max = std::to_string(std::numeric_limits<long>::max() - i);
-            parser.setInput(max.c_str());
+            parser.setInput(max);
             parser.parse();
             if (!parser.getFinished() || parser.getResult() != std::numeric_limits<long>::max() - i) {
                 return false;
             }
             const std::string min = std::to_string(std::numeric_limits<long>::min() + i);
-            parser.setInput(min.c_str());
+            parser.setInput(min);
             parser.parse();
             if (!parser.getFinished() || parser.getResult() != std::numeric_limits<long>::min() + i) {
                 return false;
@@ -134,7 +134,7 @@ bool testIntDomain(Parser& parser) {
     for (long i = 0; i <= 11; i++) {
         try {
             const std::string max = std::to_string(std::numeric_limits<unsigned long>::max() / 2 + 1 + i);
-            parser.setInput(max.c_str());
+            parser.setInput(max);
             parser.parse();
             return false;
         } catch (const ParserException& e) {
@@ -144,7 +144,7 @@ bool testIntDomain(Parser& parser) {
         }
         try {
             const std::string min = "-" + std::to_string(std::numeric_limits<unsigned long>::max() / 2 + 2 + i);
-            parser.setInput(min.c_str());
+            parser.setInput(min);
             parser.parse();
             return false;
         } catch (const ParserException& e) {
@@ -169,7 +169,7 @@ struct ExpressionTestCase {
 
 /* Collection of various expressions */
 const  ExpressionTestCase FIXTURES[] = {
-    { "Empty input-0", "",       false, ErrorCode::SYNTAX_ERROR },
+    { "Empty input-0", "",       false, ErrorCode::NO_INPUT },
     { "Empty input-1", "   ",    false, ErrorCode::SYNTAX_ERROR },
 
     { "Simple value-0", "0",      true, { .value = 0L } },
@@ -209,14 +209,14 @@ const  ExpressionTestCase FIXTURES[] = {
     { "Pass-2", "100000 / 33 / 12 - 19 / 9 * 6--98", true, { .value = 100000L / 33L / 12L - 19L / 9L * 6L - -98L } },
     { "Pass-3", "1 * 2 * 3 * 4 * 5 * 6 * 7 * 8 * 9 *10 /9/8/7 /6 / 5 /-4 /3 / 2 / 1", true, { .value = -10L } },
     { "Pass-4", "-100000 / -2 + 1 / 1000000", true, { .value = -100000L / -2L + 1L / 1000000L } },
-    { "Pass-5", "   7812*9259- -545 * -42433 + -4 * -4  / 2 - -132424 / 432 ", true, 
+    { "Pass-5", "   7812*9259- -545 * -42433 + -4 * -4  / 2 - -132424 / 432 ", true,
         { .value = 7812L * 9259L - -545L * -42433L + -4L * -4L / 2L - -132424L / 432L } }
 };
 
 /** Test an expression parsing */
 bool runExpressionTest(Parser& parser, const ExpressionTestCase& fixture) {
     try {
-        parser.setInput(fixture.input.c_str());
+        parser.setInput(fixture.input);
         parser.parse();
         return fixture.success && parser.getFinished() && parser.getResult() == fixture.result.value;
     } catch (const ParserException& e) {
@@ -229,10 +229,7 @@ void runTests() {
     std::cout << "Test run started." << std::endl;
     Parser parser = Parser();
     if (!testNullInput(parser))
-        std::cout << "Failed to perform without input as if input was null" << std::endl;
-    parser.setInput(nullptr);
-    if (!testNullInput(parser))
-        std::cout << "Null input test failed" << std::endl;
+        std::cout << "Failed to perform without input" << std::endl;
     if (!testAdd())
         std::cout << "Addition tests failed" << std::endl;
     if (!testSub())
@@ -250,6 +247,6 @@ void runTests() {
 }
 
 /** Program entry point */
-int main(void) { 
+int main(void) {
     runTests();
 }
