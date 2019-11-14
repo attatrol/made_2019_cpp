@@ -1,17 +1,27 @@
 #include "matrix.h"
 
-Matrix::Matrix(int* data, std::size_t rowCount, std::size_t colCount): m_rowCount(rowCount), m_colCount(colCount), m_data(nullptr), m_row(m_colCount)
+Matrix::Matrix(int* data, std::size_t rowCount, std::size_t colCount): m_rowCount(rowCount), m_colCount(colCount), m_data(nullptr)
 {
-    if (!colCount || !rowCount)
-    {
-        throw std::out_of_range("Zero matrix sizes");
-    }
     std::size_t size = getSize();
-    m_data = new int[size];
-    std::copy(data, data + size, m_data);
+    if (!size)
+    {
+        if (colCount || rowCount)
+        {
+            throw std::out_of_range("Zero aand nonzero matrix sizes mixed");
+        }
+    }
+    else
+    {
+        m_data = new int[size];
+        std::copy(data, data + size, m_data);
+    }
 }
 
-Matrix::Matrix(const Matrix& other): m_rowCount(other.m_rowCount), m_colCount(other.m_colCount), m_row(m_colCount)
+Matrix::Matrix(): m_rowCount(0), m_colCount(0), m_data(nullptr)
+{
+}
+
+Matrix::Matrix(const Matrix& other): m_rowCount(other.m_rowCount), m_colCount(other.m_colCount), m_data(nullptr)
 {
     std::size_t size = getSize();
     m_data = new int[size];
@@ -84,4 +94,22 @@ void Matrix::multiply(int factor)
     {
         m_data[i] *= factor;
     }
+}
+
+Matrix::Row&& Matrix::operator[](std::size_t idx)
+{
+    if (idx >= m_rowCount)
+    {
+        throw std::out_of_range("Matrix row index out of range");
+    }
+    return std::move(Row(m_data + idx * m_colCount, m_rowCount));
+}
+
+int& Matrix::Row::operator[](std::size_t idx)
+{
+    if (idx >= m_size)
+    {
+        throw std::out_of_range("Matrix column index out of range");
+    }
+    return m_data[idx];
 }
