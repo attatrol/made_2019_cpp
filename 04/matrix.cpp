@@ -96,13 +96,13 @@ void Matrix::multiply(int factor)
     }
 }
 
-Matrix::Row&& Matrix::operator[](std::size_t idx)
+Matrix::Row Matrix::operator[](std::size_t idx)
 {
     if (idx >= m_rowCount)
     {
         throw std::out_of_range("Matrix row index out of range");
     }
-    return std::move(Row(m_data + idx * m_colCount, m_rowCount));
+    return Row(m_data + idx * m_colCount, m_rowCount);
 }
 
 int& Matrix::Row::operator[](std::size_t idx)

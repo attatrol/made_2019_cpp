@@ -15,19 +15,14 @@ private:
     private:
         int* m_data;                         /* link to the row data array */
         std::size_t& m_size;                 /* matrix row length */
+    public:
         Row(int* data, std::size_t& size): m_data(data), m_size(size)
         {
         }
-    public:
-        /*
-         * Standard creation and copy are forbidden.
-         * A lot of problems with coherency are avoided this way.
-         */
         const Row& operator=(const Row&)
         {
             return *this;
         }
-        Row() = delete;
         Row& operator=(Row&&) = delete;
         Row(const Row&) = delete;
         Row(Row&&) = delete;
@@ -62,7 +57,7 @@ public:
         delete[] m_data;
     }
     /* Get row by index */
-    Row&& operator[](std::size_t idx);
+    Row operator[](std::size_t idx);
     /* Equals to operator */
     bool operator ==(const Matrix& other) const
     {
