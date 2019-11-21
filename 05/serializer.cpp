@@ -1,13 +1,13 @@
 #include "serializer.h"
 
-template <>
-void Serializer::process<uint64_t>(Error& result, const uint64_t& val)
+Error Serializer::process(const uint64_t& val)
 {
     m_out << val << Separator;
+    return Error::NoError;
 }
 
-template <>
-void Serializer::process<bool>(Error& result, const bool& val)
+Error Serializer::process(const bool& val)
 {
     m_out << (val ? "true" : "false") << Separator;
+    return Error::NoError;
 }

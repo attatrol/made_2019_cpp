@@ -23,36 +23,31 @@ public:
     template <class... ArgsT>
     Error operator()(const ArgsT&... args)
     {
-        Error result = Error::NoError;
-        process(result, args...);
-        return result;
+        return process(args...);
     }
 
 private:
     std::ostream& m_out;
 
     template <typename T>
-    void process(Error& result, const T& val)
+    Error process(const T& val)
     {
-        result = Error::UnsupportedType;
+        return Error::UnsupportedType;
     }
+    Error process(const uint64_t& val);
+
+    Error process(const bool& val);
 
     template <typename T, typename... Args>
-    void process(Error& result, const T& val, const Args&... args)
+    Error process(const T& val, const Args&... args)
     {
-        process(result, std::forward<const T&>(val)); // process(result, std::forward<const T&>(val));
+        Error result = process(std::forward<const T&>(val)); // process(result, std::forward<const T&>(val));
         if (result != Error::NoError)
         {
-            return;
+            return result;
         }
-        process(result, args...); // process(result, std::forward<const args&>(val));
+        return process(args...); // process(result, std::forward<const args&>(val));
     }
 };
-
-template <>
-void Serializer::process<uint64_t>(Error& result, const uint64_t& val);
-
-template <>
-void Serializer::process<bool>(Error& result, const bool& val);
 
 #endif // SERIALIZER_H

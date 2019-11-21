@@ -2,8 +2,7 @@
 
 #include "deserializer.h"
 
-template <>
-void Deserializer::process<uint64_t>(Error& result, uint64_t& val)
+Error Deserializer::process(uint64_t& val)
 {
     std::string text;
     m_in >> text;
@@ -15,8 +14,7 @@ void Deserializer::process<uint64_t>(Error& result, uint64_t& val)
         char ch = text[i];
         if (!std::isdigit(ch))
         {
-            result = Error::CorruptedArchive;
-            return;
+            return Error::CorruptedArchive;
         }
         if (intVal < (std::numeric_limits<uint64_t>::max() - 9) / 10)
         {
@@ -33,24 +31,21 @@ void Deserializer::process<uint64_t>(Error& result, uint64_t& val)
                 }
                 else
                 {
-                    result = Error::CorruptedArchive;
-                    return;
+                    return Error::CorruptedArchive;
                 }
             }
             else
             {
-                result = Error::CorruptedArchive;
-                return;
+                return Error::CorruptedArchive;
             }
         }
     }
 
     val = intVal;
-    result = Error::NoError;
+    return Error::NoError;
 }
 
-template <>
-void Deserializer::process<bool>(Error& result, bool& val)
+Error Deserializer::process(bool& val)
 {
     std::string text;
     m_in >> text;
@@ -65,9 +60,8 @@ void Deserializer::process<bool>(Error& result, bool& val)
     }
     else
     {
-        result = Error::CorruptedArchive;
-        return;
+        return Error::CorruptedArchive;
     }
 
-    result = Error::NoError;
+    return Error::NoError;
 }
