@@ -26,11 +26,16 @@ constexpr std::size_t calcMaxDecimal(const unsigned long long max)
 class BigInt
 {
 public:
-    using cell_t = unsigned long; /** cell type, may be any integer  */
-    const static std::size_t CELL_BIT_COUNT = sizeof(cell_t) * 8 / 2; /*  */
-    const static cell_t CELL_MASK = std::numeric_limits<cell_t>::max() >> CELL_BIT_COUNT; /*  */
-    constexpr static std::size_t DECIMAL_CELL_DIGITS = calcDecimalDigits(CELL_MASK) - 1; /*  */
-    constexpr static std::size_t TO_DECIMAL_CELL_DIVISOR = calcMaxDecimal(CELL_MASK); /*  */
+    using cell_t = unsigned int; /** cell type, may be any integer  */
+    const static std::size_t CELL_BIT_COUNT = sizeof(cell_t) * 8 / 2; /* Number of bits in the used part of the cell. 
+                                                                       * Cell is normalized if only the low half of it contains digits.
+                                                                       * Higher part contains zero.
+                                                                       * While cell may become denormalized during calculations,
+                                                                       * at the end of mutation all cells must be normalised.
+                                                                       */
+    const static cell_t CELL_MASK = std::numeric_limits<cell_t>::max() >> CELL_BIT_COUNT; /* Mask for the normalized part of cell */
+    constexpr static std::size_t DECIMAL_CELL_DIGITS = calcDecimalDigits(CELL_MASK) - 1; /* Max number of decimal digits that a normalized cell contains */
+    constexpr static std::size_t TO_DECIMAL_CELL_DIVISOR = calcMaxDecimal(CELL_MASK); /* Max power of 10 that a normalized cell contains */
 private:
     cell_t* m_cells;        /* cells, store the unsigned integer value */
     std::size_t m_capacity; /* size of m_cells array */
