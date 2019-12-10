@@ -84,15 +84,15 @@ public:
         stringifyArgs(strArgs, std::forward<Args>(args)...);
 
         std::stringstream result;
-        for (auto it = tokens_.begin(); it < tokens_.end(); ++it)
+        for (const Token& token : tokens_)
         {
-            if (it->type_ == TokenType::CONSTANT)
+            if (token.type_ == TokenType::CONSTANT)
             {
-                result << constants_[it->index_];
+                result << constants_[token.index_];
             }
             else
             {
-                result << strArgs[it->index_];
+                result << strArgs[token.index_];
             }
         }
 
@@ -114,7 +114,7 @@ public:
 template <typename... Args>
 std::string format(const std::string& fmt, Args&&... args)
 {
-    return Formatter(fmt)(args...);
+    return Formatter(fmt)(std::forward<Args>(args)...);
 }
 
 #endif // FORMATTER_H
