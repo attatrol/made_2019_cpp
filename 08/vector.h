@@ -36,7 +36,7 @@ public:
     Vector(const Vector<T, Alloc>& other);
     Vector(Vector<T, Alloc>&& other) noexcept;
     Vector<T, Alloc>& operator=(const Vector<T, Alloc>& other);
-    Vector<T, Alloc>& operator=(Vector<T, Alloc>&& other);
+    Vector<T, Alloc>& operator=(Vector<T, Alloc>&& other) noexcept;
     ~Vector();
 
     iterator begin() noexcept;
@@ -88,37 +88,38 @@ Vector<T, Alloc>::Vector() noexcept:
 }
 template<typename T, typename Alloc>
 Vector<T, Alloc>::Vector(Vector<T, Alloc>::size_type count):
-    alloc_(Alloc()), size_(count), capacity_(count < 8 ? 8 : count), data_(alloc_.allocate(capacity_))
+    alloc_(Alloc()), size_(0), capacity_(count < 8 ? 8 : count), data_(alloc_.allocate(capacity_))
 {
-    for (size_type i = 0; i < size_; ++i)
+    for (; size_ < count; ++size_)
     {
-        std::allocator_traits<Alloc>::construct(alloc_, data_+i);
+        std::allocator_traits<Alloc>::construct(alloc_, data_ + size_);
     }
 }
 template<typename T, typename Alloc>
 Vector<T, Alloc>::Vector(size_type count, const value_type& defaultValue):
-    alloc_(Alloc()), size_(count), capacity_(count), data_(alloc_.allocate(capacity_))
+    alloc_(Alloc()), size_(0), capacity_(count), data_(alloc_.allocate(capacity_))
 {
-    for (size_type i = 0; i < size_; ++i)
+    for (; size_ < count; ++size_)
     {
-        std::allocator_traits<Alloc>::construct(alloc_, data_+i, defaultValue);
+        std::allocator_traits<Alloc>::construct(alloc_, data_ + size_, defaultValue);
     }
 }
 template<typename T, typename Alloc>
 Vector<T, Alloc>::Vector(std::initializer_list<value_type> list):
-    alloc_(Alloc()), size_(list.size()), capacity_(size_), data_(alloc_.allocate(size_))
+    alloc_(Alloc()), size_(0), capacity_(list.size()), data_(alloc_.allocate(capacity_))
 {
-    for (size_type i = 0; i < size_; ++i)
+    for (; size_ < capacity_; ++size_)
     {
-        std::allocator_traits<Alloc>::construct(alloc_, data_+i, *(list.begin()+i));
+        std::allocator_traits<Alloc>::construct(alloc_, data_ + size_, *(list.begin() + size_));
     }
 }
 template<typename T, typename Alloc>
-Vector<T, Alloc>::Vector(const Vector<T, Alloc>& other): Vector(other.size_)
+Vector<T, Alloc>::Vector(const Vector<T, Alloc>& other):
+    alloc_(Alloc()), size_(0), capacity_(other.size_), data_(alloc_.allocate(other.size_))
 {
-    for (size_type i = 0; i < size_; ++i)
+    for (; size_ < capacity_; ++size_)
     {
-        std::allocator_traits<Alloc>::construct(alloc_, data_+i, other[i]);
+        std::allocator_traits<Alloc>::construct(alloc_, data_ + size_, other[size_]);
     }
 }
 template<typename T, typename Alloc>
@@ -141,14 +142,14 @@ Vector<T, Alloc>& Vector<T, Alloc>::operator=(const Vector<T, Alloc>& other)
     {
         reserve(other.size_);
     }
-    for (size_type i = 0; i < other.size_; ++i)
+    for (; size_ < other.size_; ++size_)
     {
-        std::allocator_traits<Alloc>::construct(alloc_, data_ + size_++, other[i]);
+        std::allocator_traits<Alloc>::construct(alloc_, data_ + size_, other[size_]);
     }
     return *this;
 }
 template<typename T, typename Alloc>
-Vector<T, Alloc>& Vector<T, Alloc>::operator=(Vector<T, Alloc>&& other)
+Vector<T, Alloc>& Vector<T, Alloc>::operator=(Vector<T, Alloc>&& other) noexcept
 {
     if(&other == this)
     {
@@ -277,25 +278,23 @@ void Vector<T, Alloc>::resize(size_type newSize)
     {
         std::allocator_traits<Alloc>::destroy(alloc_, data_ + i);
     }
-    for (size_type i = size_; i < newSize; ++i)
+    for (; size_ < newSize; ++size_)
     {
-        std::allocator_traits<Alloc>::construct(alloc_, data_ + i);
+        std::allocator_traits<Alloc>::construct(alloc_, data_ + size_);
     }
-    size_ = newSize;
 }
 template<typename T, typename Alloc>
 void Vector<T, Alloc>::resize(size_type newSize, const value_type& defaultValue)
 {
     reserve(newSize);
-    for (size_type i = newSize; i < size_; ++i)
+    for (; newSize < size_; --size_)
     {
-        std::allocator_traits<Alloc>::destroy(alloc_, data_ + i);
+        std::allocator_traits<Alloc>::destroy(alloc_, data_ + size_);
     }
-    for (size_type i = size_; i < newSize; ++i)
+    for (; size_ < newSize; ++size_)
     {
-        std::allocator_traits<Alloc>::construct(alloc_, data_ + i, defaultValue);
+        std::allocator_traits<Alloc>::construct(alloc_, data_ + size_, defaultValue);
     }
-    size_ = newSize;
 }
 template<typename T, typename Alloc>
 void Vector<T, Alloc>::clear() noexcept
