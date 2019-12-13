@@ -30,13 +30,11 @@ private:
     value_type* data_;
 public:
     explicit Vector(size_type count);
-    Vector(): Vector(0)
-    {
-    }
+    Vector() noexcept;
     Vector(size_type count, const value_type& defaultValue);
     Vector(std::initializer_list<value_type> list);
     Vector(const Vector<T, Alloc>& other);
-    Vector(Vector<T, Alloc>&& other);
+    Vector(Vector<T, Alloc>&& other) noexcept;
     Vector<T, Alloc>& operator=(const Vector<T, Alloc>& other);
     Vector<T, Alloc>& operator=(Vector<T, Alloc>&& other);
     ~Vector();
@@ -84,6 +82,11 @@ public:
 };
 
 template<typename T, typename Alloc>
+Vector<T, Alloc>::Vector() noexcept:
+    alloc_(Alloc()), size_(0), capacity_(0), data_(nullptr)
+{
+}
+template<typename T, typename Alloc>
 Vector<T, Alloc>::Vector(Vector<T, Alloc>::size_type count):
     alloc_(Alloc()), size_(count), capacity_(count < 8 ? 8 : count), data_(alloc_.allocate(capacity_))
 {
@@ -113,10 +116,13 @@ Vector<T, Alloc>::Vector(std::initializer_list<value_type> list):
 template<typename T, typename Alloc>
 Vector<T, Alloc>::Vector(const Vector<T, Alloc>& other): Vector(other.size_)
 {
-    std::copy(other.cbegin(), other.cend(), data_);
+    for (size_type i = 0; i < size_; ++i)
+    {
+        std::allocator_traits<Alloc>::construct(alloc_, data_+i, other[i]);
+    }
 }
 template<typename T, typename Alloc>
-Vector<T, Alloc>::Vector(Vector<T, Alloc>&& other): Vector()
+Vector<T, Alloc>::Vector(Vector<T, Alloc>&& other) noexcept: Vector()
 {
     std::swap(alloc_, other.alloc_);
     std::swap(size_, other.size_);
@@ -135,8 +141,10 @@ Vector<T, Alloc>& Vector<T, Alloc>::operator=(const Vector<T, Alloc>& other)
     {
         reserve(other.size_);
     }
-    std::copy(other.begin(), other.end(), data_);
-    size_ = other.size_;
+    for (size_type i = 0; i < other.size_; ++i)
+    {
+        std::allocator_traits<Alloc>::construct(alloc_, data_ + size_++, other[i]);
+    }
     return *this;
 }
 template<typename T, typename Alloc>
@@ -238,14 +246,18 @@ void Vector<T, Alloc>::emplace_back(VT&&... values)
     {
         reserve(2 * capacity_);
     }
-    std::allocator_traits<Alloc>::construct(alloc_, data_ + size_++, std::move(values)...);
+    std::allocator_traits<Alloc>::construct(alloc_, data_ + size_++, std::forward<VT>(values)...);
 }
 template<typename T, typename Alloc>
 void Vector<T, Alloc>::reserve(size_type capacity)
 {
     if (capacity <= capacity_)
     {
-        return;
+        if (capacity)
+        {
+            return;
+        }
+        capacity = 8;
     }
     pointer newData(alloc_.allocate(capacity));
     for (size_type i = 0; i < size_; ++i)
