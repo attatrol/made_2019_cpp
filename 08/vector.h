@@ -233,7 +233,7 @@ void Vector<T, Alloc>::push_back(value_type&& value)
     {
         reserve(2 * capacity_);
     }
-    std::allocator_traits<Alloc>::construct(alloc_, data_ + size_++, std::forward<value_type>(value));
+    std::allocator_traits<Alloc>::construct(alloc_, data_ + size_++, std::move(value));
 }
 template<typename T, typename Alloc>
 void Vector<T, Alloc>::pop_back()
